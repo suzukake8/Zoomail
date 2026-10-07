@@ -112,10 +112,11 @@ COPY . /django/
 COPY entrypoint.prod.sh /django/entrypoint.prod.sh
 
 # - root のまま動かさず、専用ユーザー zoomail で実行する
-# - /django/collected_static と /django/private_media は production compose で
+# - /django/collected_static と /django/private_media は本番用Composeで
 #   ホスト側ディレクトリを bind mount する想定
 # - collectstatic / アップロード保存はこの zoomail ユーザーで実行されるため、
-#   ホスト側の collected_static/private_media も事前に APP_UID:APP_GID に揃えておく必要がある
+#   ホスト側の collected_static/private_media も事前に Actions のビルド引数
+#   APP_UID:APP_GID に揃えておく必要がある
 # - bind mount 先の所有者が root:root などのままだと、コンテナ内でディレクトリ作成に失敗する
 RUN addgroup --system --gid "${APP_GID}" zoomail \
     && adduser --system --uid "${APP_UID}" --ingroup zoomail zoomail \

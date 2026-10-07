@@ -1,0 +1,29 @@
+name: Deploy to server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    name: Deploy to server using SSH
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          script_stop: true
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          script: |
+            cd /srv/zoomail
+            git pull
+            mkdir -p collected_static private_media
+            test -w collected_static
+            test -w private_media
+            docker compose -f compose.prod.yaml up --build -d django
