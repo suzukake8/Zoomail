@@ -1,3 +1,45 @@
-mariadb/*
-collected_static/*
-private_media/*
+# 原則としてすべて除外し、イメージに必要なものだけ許可する。
+# 新しいアプリや実行時ファイルを追加したら、この許可リストも更新する。
+**
+
+# Dockerfileで参照するファイル
+!Dockerfile
+!requirements.txt
+!manage.py
+!entrypoint.prod.sh
+
+# Djangoの設定（ローカル設定は許可しない）
+!config/__init__.py
+!config/settings.py
+!config/urls.py
+!config/asgi.py
+!config/wsgi.py
+!config/middleware/
+!config/social_auth/
+
+# 管理画面・共通処理
+!custom_admin/
+!utils/
+
+# Djangoアプリ（コード・migration・テスト・テンプレート・静的ファイル）
+!top/
+!members/
+!mail/
+!movie/
+!photo/
+!kansou/
+!others/
+!howto/
+
+# 共通テンプレート・配信する静的ファイル
+!templates/
+!static/css/
+!static/img/
+!static/js/
+
+# 許可したディレクトリ内でも、環境設定とPythonのキャッシュは含めない。
+**/.env
+**/.env.*
+**/*.env
+**/__pycache__
+**/*.py[cod]

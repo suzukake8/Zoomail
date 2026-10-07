@@ -1,0 +1,2 @@
+# 空文字の引数指定で、引数付き実行を許可しない。
+deploy ALL=(root) NOPASSWD: /usr/local/sbin/deploy-zoomail ""

@@ -1,29 +1,93 @@
-name: Deploy to server
+name: Build production image (manual)
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# production タグを更新する手動ビルドを直列化する。
+concurrency:
+  group: zoomail-production
+  cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Deploy to server using SSH
+  build:
+    name: Build and publish production image
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: executing remote ssh commands using password
-        uses: appleboy/ssh-action@v1.0.3
+      - uses: actions/checkout@v7
         with:
-          script_stop: true
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
-          script: |
-            cd /srv/zoomail
-            git pull
-            mkdir -p collected_static private_media
-            test -w collected_static
-            test -w private_media
-            docker compose -f compose.prod.yaml up --build -d django
+          persist-credentials: false
+
+      - name: Set image name
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "IMAGE=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build production image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: production
+          # 本番VPSの uname -m は x86_64。ランナーと同じCPUなのでQEMU不要。
+          platforms: linux/amd64
+          load: true
+          build-args: |
+            APP_UID=${{ vars.APP_UID || '1000' }}
+            APP_GID=${{ vars.APP_GID || '1000' }}
+          tags: |
+            ${{ env.IMAGE }}:production
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check Django in production image
+        run: |
+          docker run --rm --entrypoint python \
+            -e SECRET_KEY=ci-build-check-only \
+            "$IMAGE:production" manage.py check
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push checked image
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          docker push "$IMAGE:sha-$COMMIT_SHA"
+          docker push "$IMAGE:production"
+
+  # VPS移行完了後に有効化するSSHデプロイ。現在は実行しない。
+#   deploy:
+#     name: Run fixed deployment script on VPS
+#     if: github.ref == 'refs/heads/master'
+#     needs: build
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#     steps:
+#       - name: Deploy using SSH
+#         uses: appleboy/ssh-action@v1.0.3
+#         with:
+#           host: ${{ secrets.SSH_HOST }}
+#           username: ${{ secrets.SSH_USERNAME }}
+#           key: ${{ secrets.SSH_KEY }}
+#           port: ${{ secrets.SSH_PORT }}
+#           passphrase: ${{ secrets.SSH_PASSPHRASE }}
+#           fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+#           command_timeout: 10m
+#           script: sudo -n /usr/local/sbin/deploy-zoomail

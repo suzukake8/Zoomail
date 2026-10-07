@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+# 引数・SSHからの環境変数・カレントディレクトリを設定に使わない。
+if [[ "$#" -ne 0 || "$EUID" -ne 0 ]]; then
+    echo 'Run as root without arguments.' >&2
+    exit 1
+fi
+
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export HOME=/root
+export DOCKER_CONFIG=/root/.docker
+unset DOCKER_HOST DOCKER_CONTEXT DOCKER_TLS_VERIFY DOCKER_CERT_PATH
+unset COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_PROFILES COMPOSE_ENV_FILES
+unset COMPOSE_DISABLE_ENV_FILE ZOOMAIL_IMAGE
+
+cd /srv/zoomail
+
+# Actions以外からの手動実行とも競合しないようにする。
+exec 9>/run/lock/zoomail-deploy.lock
+/usr/bin/flock -n 9
+
+compose=(/usr/bin/docker --host unix:///var/run/docker.sock compose
+    --project-name zoomail
+    --project-directory /srv/zoomail
+    --env-file /srv/zoomail/.env
+    -f /srv/zoomail/compose.registry.yaml)
+
+# 通常のリリースではMariaDBのイメージやコンテナは更新しない。
+"${compose[@]}" pull django
+"${compose[@]}" up -d --no-build --no-deps --wait --wait-timeout 180 django

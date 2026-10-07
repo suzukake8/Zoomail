@@ -68,7 +68,7 @@ class FormBoundaryTests(TestCase):
         valid_file = SimpleUploadedFile("valid.txt", b"a" * 3)  # 3バイト
         large_file = SimpleUploadedFile(
             "large.txt", b"a" * (10 * 1024 * 1024 + 1)
-        )  # 10MB + 1バイト
+        )  # 10MiB + 1バイト
 
         form = AttachmentForm(files={"file": small_file})
         self.assertFalse(form.is_valid(), "2バイトのファイルは無効であるべき")
@@ -80,48 +80,46 @@ class FormBoundaryTests(TestCase):
         self.assertFalse(form.is_valid(), "10MBを超えるファイルは無効であるべき")
 
     # 3. AttachmentFormset のバリデーションテスト
-    def test_attachment_formset_total_size(self):
-        """添付ファイルの合計サイズのテスト"""
-        file1 = SimpleUploadedFile("file1.txt", b"a" * (10 * 1024 * 1024))  # 10MB
-        file2 = SimpleUploadedFile("file2.txt", b"a" * (10 * 1024 * 1024))  # 10MB
-        file3 = SimpleUploadedFile("file3.txt", b"a" * (9 * 1024 * 1024))  # 9MB
-
+    def test_attachment_formset_accepts_multiple_files(self):
+        """合計29MiB（8 + 8 + 8 + 5）の複数添付を受け付ける。"""
         formset_data = {
-            "form-TOTAL_FORMS": 3,
-            "form-INITIAL_FORMS": 0,
-            "form-MIN_NUM_FORMS": 0,
+            "attachments-TOTAL_FORMS": 4,
+            "attachments-INITIAL_FORMS": 0,
+            "attachments-MIN_NUM_FORMS": 0,
+            "attachments-MAX_NUM_FORMS": 20,
         }
         files = {
-            "form-0-file": file1,
-            "form-1-file": file2,
-            "form-2-file": file3,
+            "attachments-0-file": SimpleUploadedFile("file1.txt", b"a" * (8 * 1024 * 1024)),
+            "attachments-1-file": SimpleUploadedFile("file2.txt", b"a" * (8 * 1024 * 1024)),
+            "attachments-2-file": SimpleUploadedFile("file3.txt", b"a" * (8 * 1024 * 1024)),
+            "attachments-3-file": SimpleUploadedFile("file4.txt", b"a" * (5 * 1024 * 1024)),
         }
+        formset = AttachmentFormset(
+            prefix="attachments", instance=Message(), data=formset_data, files=files
+        )
+        self.assertTrue(formset.is_valid(), formset.errors)
+        self.assertEqual(len(formset.cleaned_data), 4)
 
-        formset = AttachmentFormset(data=formset_data, files=files)
-        self.assertFalse(formset.is_valid(), "合計29MBのファイルは有効であるべき")
-
-        # 合計30MBを超えた場合
-        file4 = SimpleUploadedFile("file4.txt", b"a" * (2 * 1024 * 1024))  # 2MB
-        files["form-2-file"] = file4  # これで合計32MB
-        formset = AttachmentFormset(data=formset_data, files=files)
-        self.assertFalse(formset.is_valid(), "合計30MBを超えるファイルは無効であるべき")
-
-    def test_attachment_formset_rejects_total_size_over_30mb(self):
-        """各ファイルは上限内でも合計30MB超なら無効"""
+    def test_attachment_formset_rejects_total_size_over_limit(self):
+        """合計31MiB（8 + 8 + 8 + 7）をDjango側の合計サイズ制限で拒否する。"""
         formset_data = {
-            "form-TOTAL_FORMS": 4,
-            "form-INITIAL_FORMS": 0,
-            "form-MIN_NUM_FORMS": 0,
-            "form-MAX_NUM_FORMS": 20,
+            "attachments-TOTAL_FORMS": 4,
+            "attachments-INITIAL_FORMS": 0,
+            "attachments-MIN_NUM_FORMS": 0,
+            "attachments-MAX_NUM_FORMS": 20,
         }
         files = {
-            "form-0-file": SimpleUploadedFile("file1.txt", b"a" * (8 * 1024 * 1024)),
-            "form-1-file": SimpleUploadedFile("file2.txt", b"a" * (8 * 1024 * 1024)),
-            "form-2-file": SimpleUploadedFile("file3.txt", b"a" * (8 * 1024 * 1024)),
-            "form-3-file": SimpleUploadedFile("file4.txt", b"a" * (8 * 1024 * 1024)),
+            "attachments-0-file": SimpleUploadedFile("file1.txt", b"a" * (8 * 1024 * 1024)),
+            "attachments-1-file": SimpleUploadedFile("file2.txt", b"a" * (8 * 1024 * 1024)),
+            "attachments-2-file": SimpleUploadedFile("file3.txt", b"a" * (8 * 1024 * 1024)),
+            "attachments-3-file": SimpleUploadedFile("file4.txt", b"a" * (7 * 1024 * 1024)),
         }
-
-        formset = AttachmentFormset(data=formset_data, files=files)
-
+        formset = AttachmentFormset(
+            prefix="attachments", instance=Message(), data=formset_data, files=files
+        )
         self.assertFalse(formset.is_valid())
-        self.assertTrue(formset.non_form_errors())
+        self.assertTrue(all(not errors for errors in formset.errors), formset.errors)
+        self.assertIn(
+            "アップロードできるファイルの合計サイズは30MBまでです。",
+            formset.non_form_errors(),
+        )
