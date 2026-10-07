@@ -184,8 +184,7 @@ class MailisSender(SympleMailSender):
         attachment_list = []
         for attachment in self.message.attachments.all():
             file = MailAttachment()
-            file.filename = attachment.org_filename
-            file.load_file(attachment.file.path)
+            file.load_file(attachment.file.path, filename=attachment.org_filename)
             attachment_list.append(file)
         super().set_attachment_list(attachment_list)
 
