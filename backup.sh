@@ -11,9 +11,9 @@ now=$(date +"%Y%m%d_%H%M")
 mkdir -p ~/zoomail_db_dump
 
 # dump only the application database so local restore can use different credentials
-# use the credentials already set in the running database container
+# use the application user; existing databases may have a different root password
 docker compose -f "$COMPOSE_FILE" exec -T database \
-    sh -lc 'exec mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --databases "$MARIADB_DATABASE"' \
+    sh -lc 'exec mariadb-dump -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" --single-transaction --databases "$MARIADB_DATABASE"' \
     > ~/zoomail_db_dump/zoomail_$now.sql
 
 cd ~/zoomail_db_dump
