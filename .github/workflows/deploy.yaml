@@ -81,6 +81,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Debug SSH fingerprint
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+        run: |
+          echo "=== Registered fingerprint ==="
+          echo "$SSH_FINGERPRINT"
+
+          echo "=== Server fingerprints ==="
+          ssh-keyscan -p "${SSH_PORT:-22}" \
+            -t ed25519,ecdsa,rsa "$SSH_HOST" 2>/dev/null \
+            | ssh-keygen -lf -
       - name: Deploy using SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
