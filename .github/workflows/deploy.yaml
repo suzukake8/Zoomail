@@ -1,12 +1,14 @@
-name: Build production image (manual)
+name: Build and deploy to Production Server
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - master
 
 permissions:
   contents: read
 
-# production タグを更新する手動ビルドを直列化する。
+# production タグの更新からSSHデプロイ完了までを直列化する。
 concurrency:
   group: zoomail-production
   cancel-in-progress: false
@@ -72,22 +74,21 @@ jobs:
           docker push "$IMAGE:sha-$COMMIT_SHA"
           docker push "$IMAGE:production"
 
-  # VPS移行完了後に有効化するSSHデプロイ。現在は実行しない。
-#   deploy:
-#     name: Run fixed deployment script on VPS
-#     if: github.ref == 'refs/heads/master'
-#     needs: build
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 15
-#     steps:
-#       - name: Deploy using SSH
-#         uses: appleboy/ssh-action@v1.0.3
-#         with:
-#           host: ${{ secrets.SSH_HOST }}
-#           username: ${{ secrets.SSH_USERNAME }}
-#           key: ${{ secrets.SSH_KEY }}
-#           port: ${{ secrets.SSH_PORT }}
-#           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-#           fingerprint: ${{ secrets.SSH_FINGERPRINT }}
-#           command_timeout: 10m
-#           script: sudo -n /usr/local/sbin/deploy-zoomail
+  deploy:
+    name: Run fixed deployment script on VPS
+    if: github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Deploy using SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          command_timeout: 10m
+          script: sudo -n /usr/local/sbin/deploy-zoomail
