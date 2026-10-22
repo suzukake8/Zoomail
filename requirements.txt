@@ -3,7 +3,7 @@ asgiref==3.11.1
 certifi==2026.10.19
 cffi==2.0.0
 charset-normalizer==3.5.2
-cryptography==46.0.5
+cryptography==50.0.2
 defusedxml==0.7.1
 django-autocomplete-light==3.12.1
 django-formtools==2.5.1
