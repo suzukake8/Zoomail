@@ -3,7 +3,7 @@
 ############################
 # develop stage
 ############################
-FROM python:3.14.3-slim-bookworm AS develop
+FROM python:3.14.7-slim-bookworm AS develop
 
 WORKDIR /django
 
@@ -49,7 +49,7 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 ############################
 # builder stage
 ############################
-FROM python:3.14.3-slim-bookworm AS builder
+FROM python:3.14.7-slim-bookworm AS builder
 
 WORKDIR /django
 
@@ -78,7 +78,7 @@ RUN pip install --upgrade "pip==26.2.2" \
 ############################
 # production stage
 ############################
-FROM python:3.14.3-slim-bookworm AS production
+FROM python:3.14.7-slim-bookworm AS production
 
 WORKDIR /django
 
