@@ -67,12 +67,18 @@
 <div class="container mx-auto text-center border-top border-white pt-5">
     <h2 class="text-uppercase my-5">Log in</h2>
     <div class="d-flex justify-content-center align-items-center flex-wrap mb-4">
-        <a href="{% url 'social:begin' 'auth0' %}" class="livelogin">
-            <span>Log in with</span><img src="{% static 'img/livelog.png' %}" width="80" height="59" alt="LiveLog" />
-        </a>
-        <a href="{% url 'social:begin' 'google-oauth2' %}" id="G-login" alt="Sign in with Google">
-            Sign in with Google
-        </a>
+        <form action="{% url 'social:begin' 'auth0' %}" method="post" class="d-flex flex-shrink-0 m-0">
+            {% csrf_token %}
+            <button type="submit" class="livelogin">
+                <span>Log in with</span><img src="{% static 'img/livelog.png' %}" width="80" height="59" alt="LiveLog" />
+            </button>
+        </form>
+        <form action="{% url 'social:begin' 'google-oauth2' %}" method="post" class="d-flex flex-shrink-0 m-0">
+            {% csrf_token %}
+            <button type="submit" id="G-login" aria-label="Sign in with Google">
+                Sign in with Google
+            </button>
+        </form>
     </div>
 
     <p class="fs-sm">
@@ -82,7 +88,7 @@
 
 </div>
 <style>
-    a#G-login {
+    button#G-login {
         display: inline-block;
         color: transparent;
         text-decoration: none;
@@ -93,19 +99,20 @@
         height: 46px;
         width: 192px;
         margin: 1rem;
+        padding: 0;
         flex-shrink: 0;
         font-size: 0;
         border: transparent 2px solid;
         border-radius: 2px;
     }
 
-    a#G-login:hover {
+    button#G-login:hover {
         text-decoration: none;
         background-image: url("{% static 'img/btn_google_signin_light_focus_web@2x.png' %}");
         border: var(--bs-white) 2px solid;
     }
 
-    a.livelogin {
+    button.livelogin {
         display: inline-flex;
         position: relative;
         justify-content: center;
@@ -124,19 +131,19 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     }
 
-    a.livelogin:hover {
+    button.livelogin:hover {
         text-decoration: underline;
         border: var(--bs-white) 4px solid;
     }
 
-    a.livelogin span {
+    button.livelogin span {
         display: inline-block;
         font-size: 16px;
         margin: 0;
         padding: 0;
     }
 
-    a.livelogin img {
+    button.livelogin img {
         display: inline-block;
         margin: 0;
         padding: 0;
