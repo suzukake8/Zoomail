@@ -32,7 +32,7 @@ RUN apt-get update \
 # - requirements.txt を先にコピーすると依存レイヤーのキャッシュが効きやすい
 COPY requirements.txt /django/requirements.txt
 
-RUN pip install --upgrade pip \
+RUN pip install --upgrade "pip==26.2.2" \
     && pip install -r /django/requirements.txt
 
 # - 開発用ステージは manage.py runserver を 8000 番で待ち受ける前提
@@ -71,7 +71,7 @@ COPY requirements.txt /django/requirements.txt
 
 # - wheel を作っておくと production 側で再コンパイルせずに入れられる
 # - builder と production を同系統イメージに揃えることで事故を減らす
-RUN pip install --upgrade pip \
+RUN pip install --upgrade "pip==26.2.2" \
     && pip wheel --wheel-dir /wheels -r /django/requirements.txt
 
 
@@ -105,7 +105,7 @@ COPY --from=builder /wheels /wheels
 
 # - builder で作成した wheel からインストールする
 # - /usr/lib などを雑に丸コピーしない
-RUN pip install --upgrade pip \
+RUN pip install --upgrade "pip==26.2.2" \
     && pip install /wheels/*
 
 COPY . /django/
