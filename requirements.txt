@@ -1,4 +1,4 @@
-Django==5.2.12
+Django==5.2.18
 asgiref==3.11.1
 certifi==2026.10.19
 cffi==2.0.0
