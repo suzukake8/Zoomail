@@ -75,7 +75,7 @@ class File(models.Model):
         images = convert_from_path(self.file.path, first_page=1, last_page=1)
         if images:
             # Resize the image to 256x256 pixels
-            resized_image = images[0].resize((256, 256), Image.LANCZOS)
+            resized_image = images[0].resize((256, 256), Image.Resampling.LANCZOS)
             thumb_io = BytesIO()
             resized_image.save(thumb_io, format="JPEG")
             thumb_content = ContentFile(thumb_io.getvalue())
