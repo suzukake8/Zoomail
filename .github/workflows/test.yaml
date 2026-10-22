@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Build CI image
+        run: docker build --target develop --tag zoomail-ci:latest .
+
+      - name: Run Django system checks
+        run: >-
+          docker run --rm
+          --env SECRET_KEY=ci-only-secret-key
+          --env DATABASE=
+          zoomail-ci:latest
+          python manage.py check
+
+      - name: Run Django tests
+        run: >-
+          docker run --rm
+          --env SECRET_KEY=ci-only-secret-key
+          --env DATABASE=
+          zoomail-ci:latest
+          python manage.py test
