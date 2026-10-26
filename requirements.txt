@@ -1,5 +1,5 @@
 Django==5.2.18
-asgiref==3.12.1
+asgiref==3.13.0
 certifi==2026.10.19
 cffi==2.1.1
 charset-normalizer==3.5.2
@@ -17,7 +17,7 @@ packaging==26.3
 pdf2image==1.17.0
 pillow==13.0.0
 pyasn1==0.6.4
-pycparser==3.11
+pycparser==3.12
 PyJWT==2.15.1
 python-jose==3.5.0
 python3-openid==3.2.0
