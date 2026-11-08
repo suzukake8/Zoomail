@@ -27,5 +27,5 @@ rsa==4.9.1
 six==1.17.0
 social-auth-app-django==6.1.0
 social-auth-core==5.2.0
-sqlparse==0.6.0
+sqlparse==0.6.1
 urllib3==2.8.0
